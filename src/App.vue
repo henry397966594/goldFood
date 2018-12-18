@@ -1,13 +1,19 @@
 <template>
   <div id="app">
       <router-view></router-view>
-      <FooterGuide></FooterGuide>
+      <FooterGuide v-show="$route.meta.showFooter"></FooterGuide>
   </div>
 </template>
 
 <script>
 import FooterGuide from './components/FooterGuide/FooterGuide'
+
+
+import {mapActions} from 'vuex'
 export default {
+   mounted(){
+   this.getAddress()
+  },
   data() {
     return {
 
@@ -15,6 +21,9 @@ export default {
   },
   components: {
     FooterGuide
+  },
+  methods:{
+    ...mapActions(['getAddress'])
   }
 }
 </script>
