@@ -13,6 +13,7 @@ import {mapActions} from 'vuex'
 export default {
    mounted(){
    this.getAddress()
+   this.getUserInfo()
   },
   data() {
     return {
@@ -23,7 +24,7 @@ export default {
     FooterGuide
   },
   methods:{
-    ...mapActions(['getAddress'])
+    ...mapActions(['getAddress','getUserInfo'])
   }
 }
 </script>

@@ -93,8 +93,10 @@
                   >
                   <img
                     class="get_verification"
-                    src="./images/captcha.svg"
+                    src="http://localhost:4000/captcha"
                     alt="captcha"
+                    @click="getCaptcha"
+                    ref="captcha"
                   >
                 </section>
               </section>
@@ -126,6 +128,8 @@
 
 <script>
 import AlertTip from "../../components/AlertTip/AlertTip";
+import { reqSendCode, reqSmsLogin, reqPwdLogin } from "../../api/index.js";
+
 export default {
   data() {
     return {
@@ -144,23 +148,37 @@ export default {
   components: { AlertTip },
   methods: {
     //异步获取短信验证码
-    getCode() {
+    async getCode() {
       // 如果当前没有计时
       //启动倒计时
       if (!this.computeTime) {
         this.computeTime = 30;
-        const intervalId = setInterval(() => {
+        this.intervalId = setInterval(() => {
           this.computeTime--;
           if (this.computeTime <= 0) {
-            clearInterval(intervalId);
+            clearInterval(this.intervalId);
           }
         }, 1000);
       }
 
       //发送ajax请求
+
+      const result = await reqSendCode(this.phone);
+      if (result.code === 1) {
+        //显示提示
+
+        this.showAlert(result.msg);
+
+        //停止倒计时
+        if (this.computeTime) {
+          this.computeTime = 0;
+          clearInterval(this.intervalId);
+        }
+      }
     },
     //前台表单验证
-    login() {
+    async login() {
+      let result;
       if (this.loginWay) {
         //短信登录
         const { rightPhone, phone, code } = this;
@@ -168,23 +186,51 @@ export default {
         if (!this.rightPhone) {
           //手机号不正确
           this.showAlert("手机号不正确");
+          return;
         } else if (!code) {
           //验证码不正确
           this.showAlert("验证码不正确");
+          return;
         }
+
+        //发送ajax请求短信登录
+        result = await reqSmsLogin(phone, code);
       } else {
         //密码登录
         const { name, pwd, captcha } = this;
         if (!this.name) {
           //用户名不正确
           this.showAlert("用户名不正确");
+          return;
         } else if (!this.pwd) {
           //密码不正确
           this.showAlert("密码不正确");
+          return;
         } else if (!this.captcha) {
           //验证码必须指定
           this.showAlert("验证码必须指定");
+          return;
         }
+        result = await reqPwdLogin({ name, pwd, captcha });
+      }
+
+      if (this.computeTime) {
+        this.computeTime = 0;
+        clearInterval(this.intervalId);
+      }
+
+      if (result.code === 0) {
+        const user = result.data;
+        // console.log(user);
+        //将user保存到vuex的state中
+        this.$store.dispatch("recordUser", user);
+
+        //去个人中心的主页
+        this.$router.replace("/profile");
+      } else {
+        this.getCaptcha();
+        const msg = result.msg;
+        this.showAlert(msg);
       }
     },
     showAlert(alertText) {
@@ -194,6 +240,12 @@ export default {
     closeTip() {
       this.alertShow = false;
       this.alertText = "";
+    },
+    //获取一个新的图片验证码
+    getCaptcha() {
+      //每次指定的src值不能变
+      this.$refs.captcha.src =
+        "http://localhost:4000/captcha?time=" + Date.now();
     }
   },
   computed: {

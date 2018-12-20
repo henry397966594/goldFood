@@ -4,19 +4,22 @@
       <HeaderTop title=" 我的 " />
       <section class="profile-number">
         <router-link
-          to="/login"
+          :to="userInfo._id?'/userinfo':'/login'"
           class="profile-link"
         >
           <div class="profile_image">
             <i class="iconfont icon-user"></i>
           </div>
           <div class="user-info">
-            <p class="user-info-top"> 登录 / 注册 </p>
+            <p
+              class="user-info-top"
+              v-if="!userInfo.phone"
+            > {{userInfo.name||'登录注册'}} </p>
             <p>
               <span class="user-icon">
                 <i class="iconfont icon-msnui-tel"></i>
               </span>
-              <span class="icon-mobile-number"> 暂无绑定手机号 </span>
+              <span class="icon-mobile-number">{{userInfo.phone||'暂无绑定手机号'}} </span>
             </p>
           </div>
           <span class="arrow">
@@ -114,18 +117,44 @@
           </div>
         </a>
       </section>
+
+      <section class="profile_my_order border-1px">
+        <mt-button type="danger" style="width:100%" v-if="userInfo._id" @click="logout">
+          退出登录
+        </mt-button>
+
+      </section>
     </section>
   </div>
 </template>
 
 <script>
+import { mapState } from "vuex";
+import {MessageBox,Toast} from 'mint-ui'
 import HeaderTop from "../../components/HeaderTop/HeaderTop";
 
 export default {
   data() {
     return {};
   },
-  components: { HeaderTop }
+  components: { HeaderTop },
+  computed: {
+    ...mapState(["userInfo"])
+  },
+  methods:{
+    logout(){
+      MessageBox.confirm('Are you sure ?').then(
+        action=>{
+          //请求退出 
+          this.$store.dispatch('logout')
+          Toast('what a pity,you left the app')
+        },
+        action=>{
+          console.log('点击了取消')
+        }
+      )
+    }
+  }
 };
 </script>
 
@@ -236,12 +265,11 @@ export default {
 
             .icon-msnui-tel {
               font-size: 20px;
-              margin-left:13px;
-              
+              margin-left: 13px;
             }
           }
 
-          .icon-mobile-number  {
+          .icon-mobile-number {
             font-size: 14px;
             color: #fff;
           }
